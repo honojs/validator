@@ -22,7 +22,6 @@ type Validate = {
   json?: Record<string, Rules>
   header?: Record<string, Rules>
   query?: Record<string, Rules>
-  param?: Record<string, Rules>
   message?: string
 }
 
