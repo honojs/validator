@@ -1,20 +1,26 @@
 {
-  "name": "@honojs/hello",
-  "version": "0.0.6",
-  "description": "An example of third-party middleware for Hono",
+  "name": "@honojs/validator",
+  "version": "0.0.1",
+  "description": "Validator Middleware for Hono",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist/index.js",
+    "dist/index.d.ts"
   ],
   "scripts": {
-    "test": "jest",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
     "test:deno": "deno test deno_test",
     "test:all": "yarn test && yarn test:deno",
     "denoify": "rimraf deno_dist && denoify",
     "build": "rimraf dist && tsc",
     "prerelease": "yarn denoify && yarn build && yarn test:all",
-    "release": "yarn publish"
+    "release": "yarn publish",
+    "lint": "eslint --ext js,ts src .eslintrc.js",
+    "lint:fix": "eslint --ext js,ts src .eslintrc.js --fix"
+  },
+  "denoify": {
+    "replacer": "dist/replacer.js"
   },
   "license": "MIT",
   "repository": {
@@ -28,17 +34,33 @@
     "access": "public"
   },
   "dependencies": {
-    "hono": "^2.0.2"
+    "hono": "^2.0.6",
+    "jsonpath-plus": "^7.0.0",
+    "validator": "^13.7.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^3.14.0",
     "@types/jest": "^28.1.4",
+    "@types/validator": "^13.7.4",
+    "@typescript-eslint/eslint-plugin": "^5.31.0",
+    "@typescript-eslint/parser": "^5.31.0",
     "denoify": "^0.11.1",
+    "eslint": "^8.20.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-define-config": "^1.5.1",
+    "eslint-import-resolver-typescript": "^3.3.0",
+    "eslint-plugin-eslint-comments": "^3.2.0",
+    "eslint-plugin-flowtype": "^8.0.3",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-node": "^11.1.0",
     "jest": "^28.1.2",
     "jest-environment-miniflare": "^2.6.0",
     "prettier": "^2.7.1",
     "rimraf": "^3.0.2",
     "ts-jest": "^28.0.5",
     "typescript": "^4.7.4"
+  },
+  "engines": {
+    "node": ">=11.0.0"
   }
 }
