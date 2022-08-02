@@ -36,9 +36,9 @@ const validation = (validatorFunction: (validator: Validator) => Validate[]): Ha
         let ok = true
         for (const rule of rules) {
           if (typeof rule === 'function') {
-            ok = rule(value)
+            ok = rule(value || '')
           } else {
-            ok = rule[0](value, rule.slice(1))
+            ok = rule[0](value || '', ...rule.slice(1))
           }
           // `ok` is sanitized value
           if (typeof ok !== 'boolean') {

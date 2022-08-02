@@ -10,8 +10,8 @@ describe('Validator Middleware', () => {
     validation((v) => [
       {
         query: {
-          page: v.isNumeric,
-          q: [v.isAlpha, [v.contains, 'abc']],
+          page: [v.required, v.isNumeric],
+          q: [v.isAlpha, [v.isLength, { min: 10 }]],
         },
       },
     ]),
@@ -21,9 +21,11 @@ describe('Validator Middleware', () => {
   )
 
   it('Should return 400 response - query', async () => {
-    const res = await app.request('http://localhost/foo?q=bar&page=1')
+    const res = await app.request('http://localhost/foo?q=bar')
     expect(res.status).toBe(400)
-    expect(await res.text()).toBe('Invalid Value: the query parameter "q" is invalid')
+    expect(await res.text()).toBe(
+      'Invalid Value: the query parameter "page" is invalid\nInvalid Value: the query parameter "q" is invalid'
+    )
   })
 
   // body
