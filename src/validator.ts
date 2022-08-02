@@ -2,7 +2,7 @@ import validator from 'validator'
 
 export default {
   ...validator,
-  required: (value: any) => {
+  required: (value: unknown) => {
     if (value) {
       return true
     }

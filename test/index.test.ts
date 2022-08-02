@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { validation } from '../src/index'
+import { validation, validationResult } from '../src/index'
 
 describe('Validator Middleware', () => {
   const app = new Hono()
@@ -103,5 +103,34 @@ describe('Validator Middleware', () => {
     })
     const res = await app.request(req)
     expect(res.status).toBe(200)
+  })
+
+  // Custom Error handling
+  app.get(
+    '/custom-error',
+    // Custom Error handler should be above.
+    async (c, next) => {
+      await next()
+      const result = validationResult(c)
+      if (result.hasError) {
+        return c.text('CUSTOM ERROR', 404)
+      }
+    },
+    validation((v) => [
+      {
+        query: {
+          userId: v.required,
+        },
+      },
+    ]),
+    (c) => {
+      return c.text('Valid')
+    }
+  )
+
+  it('Should return 404 response - custom error handling', async () => {
+    const res = await app.request('http://localhost/custom-error')
+    expect(res.status).toBe(404)
+    expect(await res.text()).toBe('CUSTOM ERROR')
   })
 })

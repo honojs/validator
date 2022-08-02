@@ -3,12 +3,6 @@ import { JSONPath } from 'jsonpath-plus'
 import validator from './validator'
 export type Validator = typeof validator
 
-declare module 'hono' {
-  interface ContextVariableMap {
-    validationResult: Result
-  }
-}
-
 type Result = {
   hasError: boolean
   messages: string[]
@@ -100,11 +94,10 @@ const validation = (validatorFunction: (validator: Validator) => Validate[]): Ha
     }
 
     c.set('validationResult', result)
+    await next()
     if (result.hasError) {
       return c.text(result.messages.join('\n'), 400)
     }
-
-    await next()
   }
 }
 
