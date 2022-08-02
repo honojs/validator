@@ -18,7 +18,6 @@ describe('Validator Middleware', () => {
             [v.contains, 'abc'],
             [v.isLength, 1, 10],
           ],
-
           q5: [v.isEmpty, v.required],
           q6: [[v.contains, 'abc'], v.required, [v.isLength, 5, 100]],
         },
@@ -30,12 +29,23 @@ describe('Validator Middleware', () => {
   )
 
   it('Should return 400 response - query', async () => {
-    const res = await app.request(
-      'http://localhost/foo?q=barbar&q2=abcdef&q3=abcdef&q4=abcde&q5=123&q6=abcdef'
-    )
+    const searchParams = new URLSearchParams({
+      q: 'foobar',
+      q2: 'abcdef',
+      q3: 'abcdef',
+      q4: 'abcde',
+      q5: '123',
+      q6: 'abcdef',
+    })
+    const req = new Request(`http://localhost/foo?${searchParams.toString()}`)
+    const res = await app.request(req)
     expect(res.status).toBe(400)
     expect(await res.text()).toBe(
-      'Invalid Value: the query parameter "page" is invalid\nInvalid Value: the query parameter "q" is invalid\nInvalid Value: the query parameter "q5" is invalid'
+      [
+        'Invalid Value: the query parameter "page" is invalid',
+        'Invalid Value: the query parameter "q" is invalid',
+        'Invalid Value: the query parameter "q5" is invalid',
+      ].join('\n')
     )
   })
 

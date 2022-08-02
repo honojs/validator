@@ -41,7 +41,6 @@ const validation = (validatorFunction: (validator: Validator) => Validate[]): Ha
         const funcs: Func[] = []
 
         const check = (rules: Rules) => {
-          // q: v.required
           if (!Array.isArray(rules)) {
             if (typeof rules === 'function') {
               funcs[funcCount] = {
