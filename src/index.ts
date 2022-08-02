@@ -32,6 +32,13 @@ const validation = (validatorFunction: (validator: Validator) => Validate[]): Ha
       const validate = (rules: Rules, value: string, message?: string) => {
         if (!Array.isArray(rules)) {
           rules = [rules]
+        } else if (
+          // q: [v.isLength, 0, 5]
+          typeof rules[0] === 'function' &&
+          rules[1] !== undefined &&
+          typeof rules[1] !== 'function'
+        ) {
+          rules = [[rules[0], ...rules.slice(1)]]
         }
         let ok = true
         for (const rule of rules) {
