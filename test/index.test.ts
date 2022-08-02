@@ -11,7 +11,16 @@ describe('Validator Middleware', () => {
       {
         query: {
           page: [v.required, v.isNumeric],
-          q: [v.isLength, 0, 5],
+          q: [v.isLength, 1, 5],
+          q2: [v.isAlpha, [v.contains, 'abc']],
+          q3: [[v.contains, 'abc'], v.isAlpha],
+          q4: [
+            [v.contains, 'abc'],
+            [v.isLength, 1, 10],
+          ],
+
+          q5: [v.isEmpty, v.required],
+          q6: [[v.contains, 'abc'], v.required, [v.isLength, 5, 100]],
         },
       },
     ]),
@@ -21,10 +30,12 @@ describe('Validator Middleware', () => {
   )
 
   it('Should return 400 response - query', async () => {
-    const res = await app.request('http://localhost/foo?q=barbar')
+    const res = await app.request(
+      'http://localhost/foo?q=barbar&q2=abcdef&q3=abcdef&q4=abcde&q5=123&q6=abcdef'
+    )
     expect(res.status).toBe(400)
     expect(await res.text()).toBe(
-      'Invalid Value: the query parameter "page" is invalid\nInvalid Value: the query parameter "q" is invalid'
+      'Invalid Value: the query parameter "page" is invalid\nInvalid Value: the query parameter "q" is invalid\nInvalid Value: the query parameter "q5" is invalid'
     )
   })
 

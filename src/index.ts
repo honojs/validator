@@ -19,6 +19,11 @@ type Validate = {
   message?: string
 }
 
+type Func = {
+  func: Function
+  params: any[]
+}
+
 const validation = (validatorFunction: (validator: Validator) => Validate[]): Handler => {
   return async (c, next) => {
     const validations = validatorFunction(validator)
@@ -30,30 +35,44 @@ const validation = (validatorFunction: (validator: Validator) => Validate[]): Ha
 
     for (const v of validations) {
       const validate = (rules: Rules, value: string, message?: string) => {
-        if (!Array.isArray(rules)) {
-          rules = [rules]
-        } else if (
-          // q: [v.isLength, 0, 5]
-          typeof rules[0] === 'function' &&
-          rules[1] !== undefined &&
-          typeof rules[1] !== 'function'
-        ) {
-          rules = [[rules[0], ...rules.slice(1)]]
-        }
-        let ok = true
-        for (const rule of rules) {
-          if (typeof rule === 'function') {
-            ok = rule(value || '')
+        value ||= ''
+
+        let funcCount = 0
+        const funcs: Func[] = []
+
+        const check = (rules: Rules) => {
+          // q: v.required
+          if (!Array.isArray(rules)) {
+            if (typeof rules === 'function') {
+              funcs[funcCount] = {
+                func: rules,
+                params: [],
+              }
+              funcCount++
+            } else {
+              funcs[funcCount - 1].params.push(rules)
+            }
           } else {
-            ok = rule[0](value || '', ...rule.slice(1))
-          }
-          // `ok` is sanitized value
-          if (typeof ok !== 'boolean') {
-            value = ok
-            ok = false
+            for (const rule of rules) {
+              check(rule)
+            }
           }
         }
-        if (!ok) {
+        check(rules)
+
+        let invalid = false
+        funcs.map((f) => {
+          const ok = f.func(value, ...f.params)
+          if (!invalid && ok === false) {
+            invalid = true
+          }
+          if (typeof ok !== 'boolean') {
+            // ok is sanitized string
+            value = ok
+          }
+        })
+
+        if (invalid) {
           result.hasError = true
           result.messages.push(v.message || message || 'Invalid Value')
           return
