@@ -11,7 +11,7 @@ describe('Validator Middleware', () => {
       {
         query: {
           page: [v.required, v.isNumeric],
-          q: [v.isLength, 1, 5],
+          q: v.isAlpha,
           q2: [v.isAlpha, [v.contains, 'abc']],
           q3: [[v.contains, 'abc'], v.isAlpha],
           q4: [
@@ -42,9 +42,8 @@ describe('Validator Middleware', () => {
     expect(res.status).toBe(400)
     expect(await res.text()).toBe(
       [
-        'Invalid Value: the query parameter "page" is invalid',
-        'Invalid Value: the query parameter "q" is invalid',
-        'Invalid Value: the query parameter "q5" is invalid',
+        'Invalid Value: the query parameter "page" is invalid - required',
+        'Invalid Value: the query parameter "q5" is invalid - isEmpty',
       ].join('\n')
     )
   })
@@ -78,12 +77,11 @@ describe('Validator Middleware', () => {
   // header & custom error message
   app.get(
     '/',
-    validation((v) => [
+    validation((v, message) => [
       {
         header: {
-          'x-header': v.required,
+          'x-header': [v.required, message('CUSTOM MESSAGE')],
         },
-        message: 'CUSTOM MESSAGE',
       },
     ]),
     (c) => {
@@ -155,5 +153,31 @@ describe('Validator Middleware', () => {
     const res = await app.request('http://localhost/custom-error')
     expect(res.status).toBe(404)
     expect(await res.text()).toBe('CUSTOM ERROR')
+  })
+
+  // Custom Validator
+  const passwordValidator = (value: string) => {
+    return value.match(/[a-zA-Z0-9+=]+/) ? true : false
+  }
+  app.post(
+    '/custom-validator',
+    validation((_, message) => [
+      {
+        body: {
+          password: [passwordValidator, message('password is wrong')],
+        },
+      },
+    ]),
+    (c) => {
+      return c.text('Valid')
+    }
+  )
+
+  it('Should return 400 response - custom validator', async () => {
+    const body = new FormData()
+    body.append('password', 'abcd_+123')
+    const res = await app.request('http://localhost/custom-validator', { method: 'POST' })
+    expect(res.status).toBe(400)
+    expect(await res.text()).toBe('password is wrong')
   })
 })

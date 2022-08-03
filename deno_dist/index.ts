@@ -3,11 +3,6 @@ import { JSONPath } from "https://esm.sh/jsonpath-plus@7.0.0"
 import validator from './validator.ts'
 export type Validator = typeof validator
 
-type Result = {
-  hasError: boolean
-  messages: string[]
-}
-
 type Rule = Function | [Function, ...any]
 type Rules = Rule | Rule[]
 
@@ -16,25 +11,48 @@ type Validate = {
   json?: Record<string, Rules>
   header?: Record<string, Rules>
   query?: Record<string, Rules>
-  message?: string
+}
+
+type Result = {
+  hasError: boolean
+  messages: string[]
+  errors: Func[]
 }
 
 type Func = {
-  func: Function
+  rule: Function
   params: any[]
+  message?: string
 }
 
-const validation = (validatorFunction: (validator: Validator) => Validate[]): Handler => {
+class Message {
+  value: string
+  constructor(value: string) {
+    this.value = value
+  }
+  getMessage(): string {
+    return this.value
+  }
+}
+
+const message = (value: string): Message => {
+  return new Message(value)
+}
+
+const validation = (
+  validatorFunction: (validator: Validator, message: (value: string) => Message) => Validate[]
+): Handler => {
   return async (c, next) => {
-    const validations = validatorFunction(validator)
+    const validations = validatorFunction(validator, message)
 
     const result: Result = {
       hasError: false,
       messages: [],
+      errors: [],
     }
 
     for (const v of validations) {
-      const validate = (rules: Rules, value: string, message?: string) => {
+      const validate = (rules: Rules, value: string, messageFunc: (ruleName: string) => string) => {
         value ||= ''
 
         let funcCount = 0
@@ -42,9 +60,13 @@ const validation = (validatorFunction: (validator: Validator) => Validate[]): Ha
 
         const check = (rules: Rules) => {
           if (!Array.isArray(rules)) {
-            if (typeof rules === 'function') {
+            if (rules instanceof Message) {
+              if (funcs[funcCount - 1]) {
+                funcs[funcCount - 1].message = rules.getMessage()
+              }
+            } else if (typeof rules === 'function') {
               funcs[funcCount] = {
-                func: rules,
+                rule: rules,
                 params: [],
               }
               funcCount++
@@ -61,9 +83,15 @@ const validation = (validatorFunction: (validator: Validator) => Validate[]): Ha
 
         let invalid = false
         funcs.map((f) => {
-          const ok = f.func(value, ...f.params)
+          const ok = f.rule(value, ...f.params)
           if (!invalid && ok === false) {
             invalid = true
+            result.errors.push(f)
+            if (f.message) {
+              result.messages.push(f.message)
+            } else {
+              result.messages.push(messageFunc(f.rule.name))
+            }
           }
           if (typeof ok !== 'boolean') {
             // ok is sanitized string
@@ -73,7 +101,6 @@ const validation = (validatorFunction: (validator: Validator) => Validate[]): Ha
 
         if (invalid) {
           result.hasError = true
-          result.messages.push(v.message || message || 'Invalid Value')
           return
         }
       }
@@ -82,7 +109,8 @@ const validation = (validatorFunction: (validator: Validator) => Validate[]): Ha
         const query = v.query
         Object.keys(query).map((key) => {
           const value = c.req.query(key)
-          const message = `Invalid Value: the query parameter "${key}" is invalid`
+          const message = (name: string) =>
+            `Invalid Value: the query parameter "${key}" is invalid - ${name}`
           validate(query[key], value, message)
         })
       }
@@ -91,7 +119,8 @@ const validation = (validatorFunction: (validator: Validator) => Validate[]): Ha
         const header = v.header
         Object.keys(header).map((key) => {
           const value = c.req.headers.get(key) || ''
-          const message = `Invalid Value: the request header "${key}" is invalid`
+          const message = (name: string) =>
+            `Invalid Value: the request header "${key}" is invalid - ${name}`
           validate(header[key], value, message)
         })
       }
@@ -101,18 +130,20 @@ const validation = (validatorFunction: (validator: Validator) => Validate[]): Ha
         const parsedBody = await c.req.parseBody()
         Object.keys(field).map(async (key) => {
           const value = parsedBody[key]
-          const message = `Invalid Value: the request body "${key}" is invalid`
+          const message = (name: string) =>
+            `Invalid Value: the request body "${key}" is invalid - ${name}`
           validate(field[key], value, message)
         })
       }
 
       if (v.json) {
         const field = v.json
-        const json = (await c.req.json()) as any
+        const json = (await c.req.json()) as object
         Object.keys(field).map(async (key) => {
           const data = JSONPath({ path: key, json })
           const value = `${data[0]}` // Force converting to string
-          const message = `Invalid Value: the JSON body "${key}" is invalid`
+          const message = (name: string) =>
+            `Invalid Value: the JSON body "${key}" is invalid - ${name}`
           validate(field[key], value, message)
         })
       }
