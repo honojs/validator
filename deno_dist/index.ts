@@ -3,25 +3,26 @@ import { JSONPath } from "https://esm.sh/jsonpath-plus@7.0.0"
 import validator from './validator.ts'
 export type Validator = typeof validator
 
-type Rule = Function | [Function, ...any]
-type Rules = Rule | Rule[]
+type Param = string | number | Message
+type Rule = Function | [Function, ...Param[]]
+type RuleSet = Rule | Rule[]
 
 type Validate = {
-  body?: Record<string, Rules>
-  json?: Record<string, Rules>
-  header?: Record<string, Rules>
-  query?: Record<string, Rules>
+  body?: Record<string, RuleSet>
+  json?: Record<string, RuleSet>
+  header?: Record<string, RuleSet>
+  query?: Record<string, RuleSet>
+}
+
+type ResultSet = {
+  hasError: boolean
+  messages: string[]
+  errors: Result[]
 }
 
 type Result = {
-  hasError: boolean
-  messages: string[]
-  errors: Func[]
-}
-
-type Func = {
   rule: Function
-  params: any[]
+  params: Param[]
   message?: string
 }
 
@@ -45,52 +46,56 @@ const validation = (
   return async (c, next) => {
     const validations = validatorFunction(validator, message)
 
-    const result: Result = {
+    const result: ResultSet = {
       hasError: false,
       messages: [],
       errors: [],
     }
 
     for (const v of validations) {
-      const validate = (rules: Rules, value: string, messageFunc: (ruleName: string) => string) => {
+      const validate = (
+        ruleSet: RuleSet,
+        value: string,
+        messageFunc: (ruleName: string) => string
+      ) => {
         value ||= ''
 
-        let funcCount = 0
-        const funcs: Func[] = []
+        let count = 0
+        const results: Result[] = []
 
-        const check = (rules: Rules) => {
-          if (!Array.isArray(rules)) {
-            if (rules instanceof Message) {
-              if (funcs[funcCount - 1]) {
-                funcs[funcCount - 1].message = rules.getMessage()
+        const check = (ruleSet: RuleSet) => {
+          if (!Array.isArray(ruleSet)) {
+            if (ruleSet instanceof Message) {
+              if (results[count - 1]) {
+                results[count - 1].message = ruleSet.getMessage()
               }
-            } else if (typeof rules === 'function') {
-              funcs[funcCount] = {
-                rule: rules,
+            } else if (typeof ruleSet === 'function') {
+              results[count] = {
+                rule: ruleSet,
                 params: [],
               }
-              funcCount++
+              count++
             } else {
-              funcs[funcCount - 1].params.push(rules)
+              results[count - 1].params.push(ruleSet)
             }
           } else {
-            for (const rule of rules) {
-              check(rule)
+            for (const rule of ruleSet) {
+              check(rule as RuleSet)
             }
           }
         }
-        check(rules)
+        check(ruleSet)
 
         let invalid = false
-        funcs.map((f) => {
-          const ok = f.rule(value, ...f.params)
+        results.map((r) => {
+          const ok = r.rule(value, ...r.params)
           if (!invalid && ok === false) {
             invalid = true
-            result.errors.push(f)
-            if (f.message) {
-              result.messages.push(f.message)
+            result.errors.push(r)
+            if (r.message) {
+              result.messages.push(r.message)
             } else {
-              result.messages.push(messageFunc(f.rule.name))
+              result.messages.push(messageFunc(r.rule.name))
             }
           }
           if (typeof ok !== 'boolean') {
@@ -157,7 +162,7 @@ const validation = (
   }
 }
 
-const validationResult = (c: Context): Result => {
+const validationResult = (c: Context): ResultSet => {
   return c.get('validationResult')
 }
 
