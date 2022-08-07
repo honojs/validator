@@ -3,7 +3,7 @@ import { JSONPath } from 'jsonpath-plus'
 import validator from './validator'
 export type Validator = typeof validator
 
-type Param = string | number | Message
+type Param = string | number | Record<string, string | number> | Message
 type Rule = Function | [Function, ...Param[]]
 type RuleSet = Rule | Rule[]
 
