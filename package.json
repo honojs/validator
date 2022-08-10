@@ -34,6 +34,19 @@
     "registry": "https://registry.npmjs.org",
     "access": "public"
   },
+  "keywords": [
+    "hono",
+    "web",
+    "framework",
+    "cloudflare",
+    "workers",
+    "fastly",
+    "compute@edge",
+    "deno",
+    "bun",
+    "validator",
+    "middleware"
+  ],
   "dependencies": {
     "hono": "^2.0.7",
     "jsonpath-plus": "^7.0.0",
