@@ -6,12 +6,14 @@ export type Validator = typeof validator
 type Param = string | number | Record<string, string | number> | Message
 type Rule = Function | [Function, ...Param[]]
 type Rules = Rule | Rule[]
+type Done = (resultSet: ResultSet, context: Context) => Response | undefined
 
 type RuleSet = {
   body?: Record<string, Rules>
   json?: Record<string, Rules>
   header?: Record<string, Rules>
   query?: Record<string, Rules>
+  done?: Done
 }
 
 type ResultSet = {
@@ -150,16 +152,18 @@ const validatorMiddleware = (
       })
     }
 
-    c.set('validationResult', result)
-    await next()
+    if (v.done) {
+      const res = v.done(result, c)
+      if (res) {
+        return res
+      }
+    }
+
     if (result.hasError) {
       return c.text(result.messages.join('\n'), 400)
     }
+    await next()
   }
 }
 
-const validationResult = (c: Context): ResultSet => {
-  return c.get('validationResult')
-}
-
-export { validatorMiddleware as validation, validationResult }
+export { validatorMiddleware as validation }

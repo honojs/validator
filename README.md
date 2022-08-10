@@ -127,27 +127,25 @@ app.post(
 
 ### Validation Results
 
-You can handle the errors more flexibly using `validatorResult` method.
+You can handle the errors more flexibly using `done` method.
 
 ```ts
-import { validation, validationResult } from '@honojs/validator'
-
-//...
-
-app.get('/search', (c) => {
-  const result = validationResult(c)
-  if (result.hasError) {
-    return c.json(
-      {
-        messages: result.messages,
-      },
-      404
-    )
+app.get(
+  '/custom-error',
+  validation((v) => ({
+    query: {
+      userId: v.required,
+    },
+    done: (result, c) => {
+      if (result.hasError) {
+        return c.json({ OK: false }, 404)
+      }
+    },
+  })),
+  (c) => {
+    return c.json({ OK: true })
   }
-  return c.json({
-    messages: ['success!'],
-  })
-})
+)
 ```
 
 ## Author

@@ -1,5 +1,5 @@
 import { Hono } from 'hono'
-import { validation, validationResult } from '../src/index'
+import { validation } from '../src/index'
 
 describe('Validator Middleware', () => {
   const app = new Hono()
@@ -122,19 +122,18 @@ describe('Validator Middleware', () => {
   app.get(
     '/custom-error',
     // Custom Error handler should be above.
-    async (c, next) => {
-      await next()
-      const result = validationResult(c)
-      if (result.hasError) {
-        return c.json({ ERROR: true }, 404)
-      }
-    },
     validation((v) => ({
       query: {
         userId: v.required,
       },
+      done: (result, c) => {
+        if (result.hasError) {
+          return c.json({ ERROR: true }, 404)
+        }
+      },
     })),
     (c) => {
+      c.header('x-valid', 'OK')
       return c.text('Valid')
     }
   )
@@ -144,6 +143,7 @@ describe('Validator Middleware', () => {
     expect(res.status).toBe(404)
     expect(res.headers.get('Content-Type')).toBe('application/json; charset=UTF-8')
     expect(await res.text()).toEqual(JSON.stringify({ ERROR: true }))
+    expect(res.headers.get('x-valid')).toBeFalsy()
   })
 
   // Custom Validator
