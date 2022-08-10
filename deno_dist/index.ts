@@ -1,4 +1,4 @@
-import type { Handler, Context } from "https://deno.land/x/hono@v2.0.6/mod.ts"
+import type { Handler, Context } from "https://deno.land/x/hono@v2.0.7/mod.ts"
 import { JSONPath } from "https://esm.sh/jsonpath-plus@7.0.0"
 import validator from './validator.ts'
 export type Validator = typeof validator
@@ -132,7 +132,7 @@ const validation = (
 
       if (v.body) {
         const field = v.body
-        const parsedBody = await c.req.parseBody()
+        const parsedBody = (await c.req.parseBody()) as Record<string, string>
         Object.keys(field).map(async (key) => {
           const value = parsedBody[key]
           const message = (name: string) =>

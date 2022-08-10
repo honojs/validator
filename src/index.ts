@@ -132,7 +132,7 @@ const validation = (
 
       if (v.body) {
         const field = v.body
-        const parsedBody = await c.req.parseBody()
+        const parsedBody = (await c.req.parseBody()) as Record<string, string>
         Object.keys(field).map(async (key) => {
           const value = parsedBody[key]
           const message = (name: string) =>
