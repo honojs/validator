@@ -7,7 +7,8 @@
   "files": [
     "dist/index.js",
     "dist/index.d.ts",
-    "dist/validator.js"
+    "dist/validator.js",
+    "dist/validator.d.ts"
   ],
   "scripts": {
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
@@ -48,7 +49,7 @@
     "middleware"
   ],
   "dependencies": {
-    "hono": "^2.0.7",
+    "hono": "^2.0.8",
     "jsonpath-plus": "^7.0.0",
     "validator": "^13.7.0"
   },

@@ -7,22 +7,20 @@ describe('Validator Middleware', () => {
   // query
   app.get(
     '/foo',
-    validation((v) => [
-      {
-        query: {
-          page: [v.required, v.isNumeric],
-          q: v.isAlpha,
-          q2: [v.isAlpha, [v.contains, 'abc']],
-          q3: [[v.contains, 'abc'], v.isAlpha],
-          q4: [
-            [v.contains, 'abc'],
-            [v.isLength, 1, 10],
-          ],
-          q5: [v.isEmpty, v.required],
-          q6: [[v.contains, 'abc'], v.required, [v.isLength, 5, 100]],
-        },
+    validation((v) => ({
+      query: {
+        page: [v.required, v.isNumeric],
+        q: v.isAlpha,
+        q2: [v.isAlpha, [v.contains, 'abc']],
+        q3: [[v.contains, 'abc'], v.isAlpha],
+        q4: [
+          [v.contains, 'abc'],
+          [v.isLength, 1, 10],
+        ],
+        q5: [v.isEmpty, v.required],
+        q6: [[v.contains, 'abc'], v.required, [v.isLength, 5, 100]],
       },
-    ]),
+    })),
     (c) => {
       return c.text('Valid')
     }
@@ -51,13 +49,11 @@ describe('Validator Middleware', () => {
   // body
   app.post(
     '/bar',
-    validation((v) => [
-      {
-        body: {
-          email: [v.trim, v.isEmail],
-        },
+    validation((v) => ({
+      body: {
+        email: [v.trim, v.isEmail],
       },
-    ]),
+    })),
     (c) => {
       return c.text('Valid')
     }
@@ -77,13 +73,11 @@ describe('Validator Middleware', () => {
   // header & custom error message
   app.get(
     '/',
-    validation((v, message) => [
-      {
-        header: {
-          'x-header': [v.required, message('CUSTOM MESSAGE')],
-        },
+    validation((v, message) => ({
+      header: {
+        'x-header': [v.required, message('CUSTOM MESSAGE')],
       },
-    ]),
+    })),
     (c) => {
       return c.text('Valid')
     }
@@ -98,13 +92,11 @@ describe('Validator Middleware', () => {
   // JSON
   app.post(
     '/json',
-    validation((v) => [
-      {
-        json: {
-          'post.author.email': v.isEmail,
-        },
+    validation((v) => ({
+      json: {
+        'post.author.email': v.isEmail,
       },
-    ]),
+    })),
     (c) => {
       return c.text('Valid')
     }
@@ -134,16 +126,14 @@ describe('Validator Middleware', () => {
       await next()
       const result = validationResult(c)
       if (result.hasError) {
-        return c.text('CUSTOM ERROR', 404)
+        return c.json({ ERROR: true }, 404)
       }
     },
-    validation((v) => [
-      {
-        query: {
-          userId: v.required,
-        },
+    validation((v) => ({
+      query: {
+        userId: v.required,
       },
-    ]),
+    })),
     (c) => {
       return c.text('Valid')
     }
@@ -152,7 +142,8 @@ describe('Validator Middleware', () => {
   it('Should return 404 response - custom error handling', async () => {
     const res = await app.request('http://localhost/custom-error')
     expect(res.status).toBe(404)
-    expect(await res.text()).toBe('CUSTOM ERROR')
+    expect(res.headers.get('Content-Type')).toBe('application/json; charset=UTF-8')
+    expect(await res.text()).toEqual(JSON.stringify({ ERROR: true }))
   })
 
   // Custom Validator
@@ -161,13 +152,11 @@ describe('Validator Middleware', () => {
   }
   app.post(
     '/custom-validator',
-    validation((_, message) => [
-      {
-        body: {
-          password: [passwordValidator, message('password is wrong')],
-        },
+    validation((_, message) => ({
+      body: {
+        password: [passwordValidator, message('password is wrong')],
       },
-    ]),
+    })),
     (c) => {
       return c.text('Valid')
     }

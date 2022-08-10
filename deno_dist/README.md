@@ -31,14 +31,12 @@ const app = new Hono()
 
 app.post(
   '/post',
-  validation((v, message) => [
-    {
-      body: {
-        title: [v.required, message('Title is required!!')],
-        body: [v.isLength, { max: 10 }],
-      },
+  validation((v, message) => ({
+    body: {
+      title: [v.required, message('Title is required!!')],
+      body: [v.isLength, { max: 400 }],
     },
-  ]),
+  })),
   (c) => c.text('Created!', 201)
 )
 
@@ -53,24 +51,22 @@ You can validate four types of targets: form body, request headers, search param
 ```ts
 app.post(
   '*',
-  validation((v) => [
-    {
-      body: {
-        // Pass the parameters to the validator using array:
-        name: [v.isAlpha, [v.contains, 'abc']],
-      },
-      header: {
-        'x-custom-header': v.isAlphanumeric,
-      },
-      query: {
-        q: v.required,
-      },
-      json: {
-        // You can specify the key using JSON Path:
-        'post.author.email': [v.required, v.isEmail],
-      },
+  validation((v) => ({
+    body: {
+      // Pass the parameters to the validator using array:
+      name: [v.isAlpha, [v.contains, 'abc']],
     },
-  ])
+    header: {
+      'x-custom-header': v.isAlphanumeric,
+    },
+    query: {
+      q: v.required,
+    },
+    json: {
+      // You can specify the key using JSON Path:
+      'post.author.email': [v.required, v.isEmail],
+    },
+  }))
 )
 ```
 
@@ -81,13 +77,11 @@ You can sanitize the values before passing the theme to the validator.
 ```ts
 app.post(
   '/post',
-  validation((v) => [
-    {
-      body: {
-        email: [v.trim, v.isEmail],
-      },
+  validation((v) => ({
+    body: {
+      email: [v.trim, v.isEmail],
     },
-  ])
+  }))
 )
 ```
 
@@ -104,13 +98,11 @@ You can set custom error messages for each rule.
 ```ts
 app.post(
   '/post',
-  validation((v, message) => [
-    {
-      body: {
-        title: [v.required, message('Please set the title! Please!')],
-      },
+  validation((v, message) => ({
+    body: {
+      title: [v.required, message('Please set the title! Please!')],
     },
-  ])
+  }))
 )
 ```
 
@@ -122,15 +114,14 @@ Making custom validator is easy.
 const passwordValidator = (value: string) => {
   return value.match(/[a-zA-Z0-9+=]+/) ? true : false
 }
+
 app.post(
   '/custom-validator',
-  validation((_, message) => [
-    {
-      body: {
-        password: [passwordValidator, message('password is wrong')],
-      },
+  validation((_, message) => ({
+    body: {
+      password: [passwordValidator, message('password is wrong')],
     },
-  ])
+  }))
 )
 ```
 
