@@ -1,4 +1,4 @@
-import { validation, validationResult } from '../deno_dist/mod.ts'
+import { validation } from '../deno_dist/mod.ts'
 import { assertEquals, Hono } from './deps.ts'
 
 // Test just only minimal patterns.
@@ -8,13 +8,11 @@ Deno.test('Validator Middleware', async () => {
   const app = new Hono()
   app.get(
     '/foo',
-    validation((v) => [
-      {
-        query: {
-          q: [v.isAlpha, [v.contains, 'abc']],
-        },
+    validation((v) => ({
+      query: {
+        q: [v.isAlpha, [v.contains, 'abc']],
       },
-    ])
+    }))
   )
   app.get('/foo', (c) => c.text('valid'))
 
@@ -27,13 +25,11 @@ Deno.test('Validator Middleware', async () => {
 
   app.post(
     '/bar',
-    validation((v) => [
-      {
-        json: {
-          'post.author.email': [v.trim, v.isEmail],
-        },
+    validation((v) => ({
+      json: {
+        'post.author.email': [v.trim, v.isEmail],
       },
-    ])
+    }))
   )
   app.post('/bar', (c) => c.text('valid'))
 
