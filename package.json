@@ -26,9 +26,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/honojs/middleware-template.git"
+    "url": "https://github.com/honojs/validator.git"
   },
-  "homepage": "https://github.com/honojs/middleware-template",
+  "homepage": "https://github.com/honojs/validator",
   "author": "Yusuke Wada <yusuke@kamawada.com> (https://github.com/yusukebe)",
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
