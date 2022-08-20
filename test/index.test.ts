@@ -148,7 +148,7 @@ describe('Validator Middleware', () => {
 
   // Custom Validator
   const passwordValidator = (value: string) => {
-    return value.match(/[a-zA-Z0-9+=]+/) ? true : false
+    return value.match(/^[a-zA-Z0-9]+$/) ? true : false
   }
   app.post(
     '/custom-validator',
@@ -162,11 +162,62 @@ describe('Validator Middleware', () => {
     }
   )
 
+  it('Should return 200 response - custom validator', async () => {
+    const formData = new FormData()
+    formData.append('password', 'abcd123')
+    const req = new Request('http://localhost/custom-validator', {
+      method: 'POST',
+      body: formData,
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+  })
+
   it('Should return 400 response - custom validator', async () => {
-    const body = new FormData()
-    body.append('password', 'abcd_+123')
-    const res = await app.request('http://localhost/custom-validator', { method: 'POST' })
+    const formData = new FormData()
+    formData.append('password', 'abcd_+123$')
+    const req = new Request('http://localhost/custom-validator', {
+      method: 'POST',
+      body: formData,
+    })
+    const res = await app.request(req)
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('password is wrong')
+  })
+
+  // Array parameter
+  app.post(
+    '/array-parameter',
+    validation((v) => ({
+      body: {
+        value: [v.required, [v.isIn, ['valid', 'also_valid']]],
+      },
+    })),
+    (c) => {
+      return c.text('Valid')
+    }
+  )
+
+  it('Should return 200 response - array parameter', async () => {
+    const formData = new FormData()
+    formData.append('value', 'valid')
+    const req = new Request('http://localhost/array-parameter', {
+      method: 'POST',
+      body: formData,
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('Valid')
+  })
+
+  it('Should return 400 response - array parameter', async () => {
+    const formData = new FormData()
+    formData.append('value', 'invalid')
+    const req = new Request('http://localhost/array-parameter', {
+      method: 'POST',
+      body: formData,
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(400)
   })
 })

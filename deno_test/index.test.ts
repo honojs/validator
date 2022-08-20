@@ -60,4 +60,26 @@ Deno.test('Validator Middleware', async () => {
 
   res = await app.request(req)
   assertEquals(res.status, 400)
+
+  // Array parameter
+  app.post(
+    '/array-parameter',
+    validation((v) => ({
+      json: {
+        value: [v.required, [v.isIn, ['valid', 'also_valid']]],
+      },
+    })),
+    (c) => {
+      return c.text('Valid')
+    }
+  )
+
+  req = new Request('http://localhost/array-parameter', {
+    method: 'POST',
+    body: JSON.stringify({
+      value: 'invalid',
+    }),
+  })
+  res = await app.request(req)
+  assertEquals(res.status, 400)
 })

@@ -3,7 +3,7 @@ import { JSONPath } from "https://esm.sh/jsonpath-plus@7.0.0"
 import validator from './validator.ts'
 export type Validator = typeof validator
 
-type Param = string | number | Record<string, string | number> | Message
+type Param = string | number | string[] | number[] | Record<string, string | number> | Message
 type Rule = Function | [Function, ...Param[]]
 type Rules = Rule | Rule[]
 type Done = (resultSet: ResultSet, context: Context) => Response | undefined
@@ -78,8 +78,15 @@ const validatorMiddleware = (
             results[count - 1].params.push(rules)
           }
         } else {
-          for (const rule of rules) {
-            check(rule as Rules)
+          // [v.isIn, ['valid', 'also_valid']]
+          if (typeof rules[0] === ('string' || 'number')) {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            results[count - 1].params.push(rules)
+          } else {
+            for (const rule of rules) {
+              check(rule as Rules)
+            }
           }
         }
       }
