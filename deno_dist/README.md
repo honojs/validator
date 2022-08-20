@@ -78,6 +78,7 @@ app.post(
     body: {
       // Pass the parameters to the validator using array:
       name: [v.isAlpha, [v.contains, 'abc']],
+      pref: [v.required, [v.isIn, ['valid', 'also_valid']]],
     },
     header: {
       'x-custom-header': v.isAlphanumeric,
