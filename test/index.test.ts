@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { validation } from '../src/index'
 
-describe('Validator Middleware', () => {
+describe('Basic', () => {
   const app = new Hono()
 
   // query
@@ -117,6 +117,10 @@ describe('Validator Middleware', () => {
     const res = await app.request(req)
     expect(res.status).toBe(200)
   })
+})
+
+describe('Custom Error Handling', () => {
+  const app = new Hono()
 
   // Custom Error handling
   app.get(
@@ -145,6 +149,10 @@ describe('Validator Middleware', () => {
     expect(await res.text()).toEqual(JSON.stringify({ ERROR: true }))
     expect(res.headers.get('x-valid')).toBeFalsy()
   })
+})
+
+describe('Custom Validation', () => {
+  const app = new Hono()
 
   // Custom Validator
   const passwordValidator = (value: string) => {
@@ -184,6 +192,10 @@ describe('Validator Middleware', () => {
     expect(res.status).toBe(400)
     expect(await res.text()).toBe('password is wrong')
   })
+})
+
+describe('Array parameter', () => {
+  const app = new Hono()
 
   // Array parameter
   app.post(
