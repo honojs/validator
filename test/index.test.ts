@@ -233,3 +233,57 @@ describe('Array parameter', () => {
     expect(res.status).toBe(400)
   })
 })
+
+describe('Clone Request object if validate JSON or body', () => {
+  const app = new Hono()
+
+  app.post(
+    '/body',
+    validation((v) => ({
+      body: {
+        value: v.required,
+      },
+    })),
+    async (c) => {
+      const data = await c.req.formData()
+      return c.text(data.get('value')?.toString() || '')
+    }
+  )
+  app.post(
+    '/json',
+    validation((v) => ({
+      json: {
+        value: v.required,
+      },
+    })),
+    async (c) => {
+      const json = (await c.req.json()) as { value: string }
+      return c.text(json.value)
+    }
+  )
+
+  it('Should return 200 response - clone body/body', async () => {
+    const formData = new FormData()
+    formData.append('value', 'foo')
+    const req = new Request('http://localhost/body', {
+      method: 'POST',
+      body: formData,
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('foo')
+  })
+
+  it('Should return 200 response - clone body/JSON', async () => {
+    const json = {
+      value: 'foo',
+    }
+    const req = new Request('http://localhost/json', {
+      method: 'POST',
+      body: JSON.stringify(json),
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(200)
+    expect(await res.text()).toBe('foo')
+  })
+})

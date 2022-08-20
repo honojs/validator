@@ -82,4 +82,28 @@ Deno.test('Validator Middleware', async () => {
   })
   res = await app.request(req)
   assertEquals(res.status, 400)
+
+  // Confirm it clone the Request object
+  app.post(
+    '/json',
+    validation((v) => ({
+      json: {
+        value: v.required,
+      },
+    })),
+    async (c) => {
+      const json = (await c.req.json()) as { value: string }
+      return c.text(json.value)
+    }
+  )
+  const json = {
+    value: 'foo',
+  }
+  req = new Request('http://localhost/json', {
+    method: 'POST',
+    body: JSON.stringify(json),
+  })
+  res = await app.request(req)
+  assertEquals(res.status, 200)
+  assertEquals(await res.text(), 'foo')
 })
