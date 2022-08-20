@@ -138,7 +138,8 @@ const validatorMiddleware = (
 
     if (v.body) {
       const field = v.body
-      const parsedBody = (await c.req.parseBody()) as Record<string, string>
+      const req = c.req.clone()
+      const parsedBody = (await req.parseBody()) as Record<string, string>
       Object.keys(field).map(async (key) => {
         const value = parsedBody[key]
         const message = (name: string) =>
@@ -149,7 +150,8 @@ const validatorMiddleware = (
 
     if (v.json) {
       const field = v.json
-      const json = (await c.req.json()) as object
+      const req = c.req.clone()
+      const json = (await req.json()) as object
       Object.keys(field).map(async (key) => {
         const data = JSONPath({ path: key, json })
         const value = `${data[0]}` // Force converting to string
