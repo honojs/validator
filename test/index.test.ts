@@ -287,3 +287,30 @@ describe('Clone Request object if validate JSON or body', () => {
     expect(await res.text()).toBe('foo')
   })
 })
+
+describe('JSON object should not be stringified', () => {
+  const app = new Hono()
+
+  // JSON
+  app.post(
+    '/json',
+    validation((v) => ({
+      json: {
+        'post.author.email': v.required,
+      },
+    })),
+    (c) => {
+      return c.text('Valid')
+    }
+  )
+
+  it('Should return 400 response - JSON', async () => {
+    const json = {}
+    const req = new Request('http://localhost/json', {
+      method: 'POST',
+      body: JSON.stringify(json),
+    })
+    const res = await app.request(req)
+    expect(res.status).toBe(400)
+  })
+})
