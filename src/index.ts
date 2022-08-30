@@ -154,7 +154,7 @@ const validatorMiddleware = (
       const json = (await req.json()) as object
       Object.keys(field).map(async (key) => {
         const data = JSONPath({ path: key, json })
-        const value = `${data[0]}` // Force converting to string
+        const value = data[0] // Do not stringify
         const message = (name: string) =>
           `Invalid Value: the JSON body "${key}" is invalid - ${name}`
         validate(field[key], value, message)
